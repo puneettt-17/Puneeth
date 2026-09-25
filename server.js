@@ -951,21 +951,23 @@ async function handleRequest(req, res) {
   });
 }
 
-const server = http.createServer(handleRequest);
-
-server.on('error', (err) => {
-  console.error('Server network error:', err);
-});
-
-process.on('uncaughtException', (err) => {
-  console.error('[UNCAUGHT_EXCEPTION]', err);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('[UNHANDLED_REJECTION]', reason);
-});
+let server = null;
 
 if (require.main === module) {
+  server = http.createServer(handleRequest);
+
+  server.on('error', (err) => {
+    console.error('Server network error:', err);
+  });
+
+  process.on('uncaughtException', (err) => {
+    console.error('[UNCAUGHT_EXCEPTION]', err);
+  });
+
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('[UNHANDLED_REJECTION]', reason);
+  });
+
   server.listen(PORT, () => {
     console.log(`=======================================================`);
     console.log(` Aegis Enterprise AI Portal & Backend API Server`);
