@@ -393,5 +393,31 @@
       "details": "Read-only purchase order audit, vendor verification, and spend anomaly detection.",
       "lastChecked": "2026-09-25T07:16:01.524Z"
     }
+  ],
+  "users": [
+    {
+      "id": "usr-admin",
+      "email": "admin@aegis.ai",
+      "name": "Puneeth G",
+      "role": "Admin / SecOps Officer",
+      "salt": "a1b2c3d4e5f60718",
+      "passwordHash": "7f197fd18acf8e227f355e2b3ba38135c07eb64ae9b611af218e61d502370cdd833da3e0c5219435c9f0394e0c7f9cb479e4a51540e75cdf0b949b99392cb34a"
+    },
+    {
+      "id": "usr-secops",
+      "email": "secops@aegis.ai",
+      "name": "Sentinel SecOps",
+      "role": "Security Auditor",
+      "salt": "b2c3d4e5f6071829",
+      "passwordHash": "9ec8d3bb85c11f3f1e92423910ea4283fb86d59177ed52358921d7adefe3aa4b2104596fe6e2edc736b8939390a9d292343ca3b787fc93e8697346430854e460"
+    },
+    {
+      "id": "usr-engineer",
+      "email": "engineer@aegis.ai",
+      "name": "Fleet Engineer",
+      "role": "AI Fleet Engineer",
+      "salt": "c3d4e5f60718293a",
+      "passwordHash": "7f4320004931af96a9372280d254a49019008ed19b11c928247a6ee9715ba2ba853ac37476a60adc954dc01f6bb3d224356bca050b11960ec0dd7a8a5b798288"
+    }
   ]
 }

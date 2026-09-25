@@ -130,21 +130,50 @@ function getDefaultDataset() {
       { id: "conn-supabase", name: "Supabase PostgreSQL Cloud", protocol: "pgvector / Pooler", status: "Active" },
       { id: "conn-salesforce", name: "Salesforce CRM", protocol: "REST / SAML 2.0", status: "Active" }
     ],
-    knowledgeDocs: []
+    knowledgeDocs: [],
+    users: [
+      {
+        id: "usr-admin",
+        email: "admin@aegis.ai",
+        name: "Puneeth G",
+        role: "Admin / SecOps Officer",
+        salt: "a1b2c3d4e5f60718",
+        passwordHash: "7f197fd18acf8e227f355e2b3ba38135c07eb64ae9b611af218e61d502370cdd833da3e0c5219435c9f0394e0c7f9cb479e4a51540e75cdf0b949b99392cb34a"
+      },
+      {
+        id: "usr-secops",
+        email: "secops@aegis.ai",
+        name: "Sentinel SecOps",
+        role: "Security Auditor",
+        salt: "b2c3d4e5f6071829",
+        passwordHash: "9ec8d3bb85c11f3f1e92423910ea4283fb86d59177ed52358921d7adefe3aa4b2104596fe6e2edc736b8939390a9d292343ca3b787fc93e8697346430854e460"
+      },
+      {
+        id: "usr-engineer",
+        email: "engineer@aegis.ai",
+        name: "Fleet Engineer",
+        role: "AI Fleet Engineer",
+        salt: "c3d4e5f60718293a",
+        passwordHash: "7f4320004931af96a9372280d254a49019008ed19b11c928247a6ee9715ba2ba853ac37476a60adc954dc01f6bb3d224356bca050b11960ec0dd7a8a5b798288"
+      }
+    ]
   };
 }
 
 function readDatabase() {
   if (inMemoryDB) {
+    if (!inMemoryDB.users) inMemoryDB.users = getDefaultDataset().users;
     return inMemoryDB;
   }
   try {
     const raw = fs.readFileSync(DB_PATH, 'utf-8');
     inMemoryDB = JSON.parse(raw);
+    if (!inMemoryDB.users) inMemoryDB.users = getDefaultDataset().users;
     return inMemoryDB;
   } catch (err) {
     try {
       inMemoryDB = require('./data/database.json');
+      if (!inMemoryDB.users) inMemoryDB.users = getDefaultDataset().users;
       return inMemoryDB;
     } catch (fallbackErr) {
       inMemoryDB = getDefaultDataset();
@@ -196,6 +225,23 @@ function sendJSON(res, statusCode, data) {
     'Access-Control-Allow-Headers': 'Content-Type, Authorization'
   });
   res.end(JSON.stringify(data));
+}
+
+// Cryptographic Password Verification Engine (Timing-Safe PBKDF2)
+function verifyPassword(password, salt, storedHash) {
+  return new Promise((resolve) => {
+    if (!password || !salt || !storedHash) return resolve(false);
+    crypto.pbkdf2(password, salt, 100000, 64, 'sha512', (err, derivedKey) => {
+      if (err) return resolve(false);
+      try {
+        const keyHex = derivedKey.toString('hex');
+        const match = crypto.timingSafeEqual(Buffer.from(keyHex), Buffer.from(storedHash));
+        resolve(match);
+      } catch (e) {
+        resolve(false);
+      }
+    });
+  });
 }
 
 // Enterprise DLP & Security Engine
@@ -307,6 +353,62 @@ async function handleRequest(req, res) {
     const db = readDatabase();
     if (!db) {
       return sendJSON(res, 500, { error: 'Database access failure' });
+    }
+
+    // POST /api/auth/login - User Authentication with Timing-Safe Password Check
+    if (pathname === '/api/auth/login' && method === 'POST') {
+      try {
+        const body = await parseBody(req);
+        const { email, password } = body;
+
+        if (!email || !password) {
+          return sendJSON(res, 400, {
+            success: false,
+            error: 'Email and password are required'
+          });
+        }
+
+        const cleanEmail = email.trim().toLowerCase();
+        const user = (db.users || []).find(u => u.email.toLowerCase() === cleanEmail);
+
+        if (!user) {
+          // Prevent account enumeration by returning identical generic 401 error
+          return sendJSON(res, 401, {
+            success: false,
+            error: 'Invalid email or password'
+          });
+        }
+
+        // CRITICAL AUDIT: MUST await the async password verification!
+        const isPasswordValid = await verifyPassword(password, user.salt, user.passwordHash);
+
+        if (!isPasswordValid) {
+          // Reject invalid passwords with 401 Unauthorized
+          return sendJSON(res, 401, {
+            success: false,
+            error: 'Invalid email or password'
+          });
+        }
+
+        // Password verified: Generate session token and safe user payload
+        const sessionToken = crypto.randomBytes(32).toString('hex');
+        const userPayload = {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          avatar: user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+        };
+
+        return sendJSON(res, 200, {
+          success: true,
+          message: 'Authentication successful',
+          token: sessionToken,
+          user: userPayload
+        });
+      } catch (err) {
+        return sendJSON(res, 500, { success: false, error: err.message });
+      }
     }
 
     // GET /api/health
