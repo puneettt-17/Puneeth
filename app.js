@@ -11,6 +11,7 @@ let SELECTED_AGENT_ID = null;
 
 // Initialize on DOM Ready
 document.addEventListener('DOMContentLoaded', () => {
+  initThemeToggle();
   initNavigation();
   initBackendStatusCheck();
   initSupabaseManager();
@@ -70,6 +71,36 @@ async function initBackendStatusCheck() {
 
   await check();
   setInterval(check, 10000);
+}
+
+// Theme Switcher: White & Green vs Emerald Dark
+function initThemeToggle() {
+  const btn = document.getElementById('theme-toggle-btn');
+  const text = document.getElementById('theme-mode-text');
+  
+  const savedTheme = localStorage.getItem('aegis-theme') || 'emerald-dark';
+  if (savedTheme === 'white-green') {
+    document.documentElement.setAttribute('data-theme', 'white-green');
+    if (text) text.textContent = 'Dark Emerald';
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    if (text) text.textContent = 'White & Green';
+  }
+
+  btn?.addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme');
+    if (current === 'white-green') {
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('aegis-theme', 'emerald-dark');
+      if (text) text.textContent = 'White & Green';
+      showToast('Switched to Emerald Dark & White theme', 'success');
+    } else {
+      document.documentElement.setAttribute('data-theme', 'white-green');
+      localStorage.setItem('aegis-theme', 'white-green');
+      if (text) text.textContent = 'Dark Emerald';
+      showToast('Switched to Pure White & Emerald Green theme', 'success');
+    }
+  });
 }
 
 // Navigation Tab Switcher
