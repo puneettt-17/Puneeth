@@ -1,0 +1,20 @@
+{
+  "name": "aegis-enterprise-ai-portal",
+  "version": "1.0.0",
+  "description": "Enterprise AI Operations Portal powered by Google Antigravity & Gemini Enterprise",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "enterprise-ai",
+    "antigravity",
+    "gemini-enterprise",
+    "multi-agent",
+    "rag",
+    "dlp"
+  ],
+  "author": "Enterprise AI Assistant",
+  "license": "ISC"
+}
