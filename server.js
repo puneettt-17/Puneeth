@@ -9,6 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const url = require('url');
 const crypto = require('crypto');
+const supabaseAdapter = require('./supabaseClient');
 
 const PORT = process.env.PORT || 3000;
 const DB_PATH = path.join(__dirname, 'data', 'database.json');
@@ -198,8 +199,151 @@ const server = http.createServer(async (req, res) => {
         status: 'healthy',
         timestamp: new Date().toISOString(),
         uptimeSeconds: process.uptime(),
-        environment: 'Enterprise Production (Gemini Enterprise Controls)'
+        environment: 'Enterprise Production (Gemini Enterprise Controls)',
+        supabase: {
+          configured: supabaseAdapter.isConfigured(),
+          url: supabaseAdapter.getSupabaseUrl() || null
+        }
       });
+    }
+
+    // GET /api/supabase/status
+    if (pathname === '/api/supabase/status' && method === 'GET') {
+      const configured = supabaseAdapter.isConfigured();
+      return sendJSON(res, 200, {
+        success: true,
+        configured: configured,
+        url: supabaseAdapter.getSupabaseUrl() || '',
+        mode: configured ? 'Supabase PostgreSQL Cloud' : 'Local JSON Fallback Store',
+        message: configured 
+          ? `Connected to Supabase project at ${supabaseAdapter.getSupabaseUrl()}` 
+          : 'Operating in local JSON fallback mode. Configure SUPABASE_URL and SUPABASE_ANON_KEY to enable cloud sync.'
+      });
+    }
+
+    // POST /api/supabase/config - Configure Supabase live from UI
+    if (pathname === '/api/supabase/config' && method === 'POST') {
+      try {
+        const body = await parseBody(req);
+        const { url, key } = body;
+        if (!url || !key) {
+          return sendJSON(res, 400, { error: 'Both Supabase URL and Key are required.' });
+        }
+
+        const success = supabaseAdapter.initSupabase(url.trim(), key.trim());
+        if (success) {
+          // Write to .env for persistence
+          const envPath = path.join(__dirname, '.env');
+          fs.writeFileSync(envPath, `PORT=${PORT}\nSUPABASE_URL=${url.trim()}\nSUPABASE_ANON_KEY=${key.trim()}\n`, 'utf-8');
+
+          return sendJSON(res, 200, {
+            success: true,
+            configured: true,
+            message: 'Supabase client successfully initialized and saved to .env.'
+          });
+        } else {
+          return sendJSON(res, 400, {
+            success: false,
+            error: 'Invalid Supabase URL or Key format.'
+          });
+        }
+      } catch (err) {
+        return sendJSON(res, 500, { error: err.message });
+      }
+    }
+
+    // POST /api/supabase/test - Test live connectivity to Supabase
+    if (pathname === '/api/supabase/test' && method === 'POST') {
+      if (!supabaseAdapter.isConfigured()) {
+        return sendJSON(res, 200, {
+          success: false,
+          configured: false,
+          message: 'Supabase is not configured yet. Please enter your project URL and Key.'
+        });
+      }
+
+      try {
+        const client = supabaseAdapter.getSupabaseClient();
+        const start = Date.now();
+        // Query agents table
+        const { data, error } = await client.from('agents').select('count', { count: 'exact', head: true });
+        const latency = Date.now() - start;
+
+        if (error) {
+          return sendJSON(res, 200, {
+            success: false,
+            configured: true,
+            latencyMs: latency,
+            error: error.message,
+            hint: 'Ensure schema.sql has been run in your Supabase SQL Editor.'
+          });
+        }
+
+        return sendJSON(res, 200, {
+          success: true,
+          configured: true,
+          latencyMs: latency,
+          message: `Successfully connected to Supabase PostgreSQL in ${latency}ms!`
+        });
+      } catch (err) {
+        return sendJSON(res, 500, { success: false, error: err.message });
+      }
+    }
+
+    // POST /api/supabase/sync - Sync local database records to Supabase
+    if (pathname === '/api/supabase/sync' && method === 'POST') {
+      if (!supabaseAdapter.isConfigured()) {
+        return sendJSON(res, 400, {
+          success: false,
+          error: 'Supabase is not configured. Please configure your project first.'
+        });
+      }
+
+      try {
+        const client = supabaseAdapter.getSupabaseClient();
+        const results = { agents: 0, dlpEvents: 0, documents: 0 };
+
+        // 1. Sync Agents
+        if (db.agents && db.agents.length > 0) {
+          const agentsPayload = db.agents.map(a => ({
+            id: a.id,
+            name: a.name,
+            specialization: a.specialization,
+            model: a.model,
+            status: a.status,
+            description: a.description,
+            tasks_completed: a.tasksCompleted,
+            confidence: a.confidence,
+            temperature: a.temperature
+          }));
+          const { error: agError } = await client.from('agents').upsert(agentsPayload);
+          if (!agError) results.agents = agentsPayload.length;
+        }
+
+        // 2. Sync DLP Events
+        if (db.dlpEvents && db.dlpEvents.length > 0) {
+          const dlpPayload = db.dlpEvents.map(d => ({
+            id: d.id,
+            timestamp: d.timestamp,
+            source_agent: d.sourceAgent,
+            detection_type: d.detectionType,
+            original_snippet: d.originalSnippet,
+            sanitized_snippet: d.sanitizedSnippet,
+            action_taken: d.actionTaken,
+            confidence: d.confidence
+          }));
+          const { error: dlpError } = await client.from('dlp_events').upsert(dlpPayload);
+          if (!dlpError) results.dlpEvents = dlpPayload.length;
+        }
+
+        return sendJSON(res, 200, {
+          success: true,
+          message: 'Data successfully synchronized to Supabase Cloud.',
+          synced: results
+        });
+      } catch (err) {
+        return sendJSON(res, 500, { success: false, error: err.message });
+      }
     }
 
     // GET /api/stats
@@ -244,10 +388,28 @@ const server = http.createServer(async (req, res) => {
         db.metrics.activeAgents = db.agents.length;
         writeDatabase(db);
 
+        // Realtime sync to Supabase if configured
+        if (supabaseAdapter.isConfigured()) {
+          supabaseAdapter.getSupabaseClient().from('agents').insert([{
+            id: newAgent.id,
+            name: newAgent.name,
+            specialization: newAgent.specialization,
+            model: newAgent.model,
+            status: newAgent.status,
+            description: newAgent.description,
+            tasks_completed: newAgent.tasksCompleted,
+            confidence: newAgent.confidence,
+            temperature: newAgent.temperature
+          }]).then(({ error }) => {
+            if (error) console.error('[SUPABASE] Agent sync error:', error.message);
+          });
+        }
+
         return sendJSON(res, 201, {
           success: true,
           message: 'Agent created successfully',
-          agent: newAgent
+          agent: newAgent,
+          supabaseSynced: supabaseAdapter.isConfigured()
         });
       } catch (err) {
         return sendJSON(res, 400, { error: err.message });
@@ -264,6 +426,12 @@ const server = http.createServer(async (req, res) => {
       const removed = db.agents.splice(idx, 1)[0];
       db.metrics.activeAgents = db.agents.length;
       writeDatabase(db);
+
+      // Delete from Supabase if configured
+      if (supabaseAdapter.isConfigured()) {
+        supabaseAdapter.getSupabaseClient().from('agents').delete().eq('id', agentId).then(() => {});
+      }
+
       return sendJSON(res, 200, { success: true, removed });
     }
 

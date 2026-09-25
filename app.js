@@ -13,6 +13,7 @@ let SELECTED_AGENT_ID = null;
 document.addEventListener('DOMContentLoaded', () => {
   initNavigation();
   initBackendStatusCheck();
+  initSupabaseManager();
   loadAllDashboardData();
   initTerminal();
   initDLPInteractiveTester();
@@ -673,6 +674,139 @@ function initHeaderActionButtons() {
     window.location.href = `${API_BASE}/api/audit/export`;
     showToast('Compliance audit package downloaded.', 'info');
     appendTerminalLog('[AUDIT] Generated certified compliance audit archive for external reviewers.', 'success');
+  });
+}
+
+// Supabase Manager (Cloud PostgreSQL Adapter)
+function initSupabaseManager() {
+  const pill = document.getElementById('supabase-status-pill');
+  const dot = document.getElementById('supabase-dot');
+  const text = document.getElementById('supabase-status-text');
+  const modal = document.getElementById('supabase-modal');
+  const closeBtn = document.getElementById('supabase-modal-close-btn');
+  const cancelBtn = document.getElementById('supabase-modal-cancel-btn');
+  const saveBtn = document.getElementById('supabase-save-btn');
+  const testBtn = document.getElementById('supabase-test-btn');
+  const syncBtn = document.getElementById('supabase-sync-btn');
+  const urlInput = document.getElementById('supabase-url-input');
+  const keyInput = document.getElementById('supabase-key-input');
+  const modeBadge = document.getElementById('supabase-mode-badge');
+  const detail = document.getElementById('supabase-status-detail');
+
+  const checkStatus = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/supabase/status`);
+      const data = await res.json();
+      if (data.configured) {
+        if (dot) {
+          dot.className = 'status-dot pulse';
+          dot.style.background = '#3ecf8e';
+        }
+        if (text) text.textContent = 'Supabase Cloud (Active)';
+        if (modeBadge) {
+          modeBadge.textContent = 'Connected (Cloud)';
+          modeBadge.className = 'badge-status online';
+        }
+        if (detail) detail.textContent = `Connected to ${data.url}`;
+        if (urlInput && !urlInput.value) urlInput.value = data.url;
+      } else {
+        if (dot) {
+          dot.className = 'status-dot';
+          dot.style.background = 'var(--accent-amber)';
+        }
+        if (text) text.textContent = 'Supabase: Local Mode';
+        if (modeBadge) {
+          modeBadge.textContent = 'Local JSON Mode';
+          modeBadge.className = 'badge-status secure';
+        }
+        if (detail) detail.textContent = 'Using local data/database.json. Enter credentials to sync to PostgreSQL.';
+      }
+    } catch (err) {
+      if (text) text.textContent = 'Supabase Offline';
+    }
+  };
+
+  checkStatus();
+
+  // Modal open & close
+  pill?.addEventListener('click', () => modal?.classList.add('show'));
+  [closeBtn, cancelBtn].forEach(b => b?.addEventListener('click', () => modal?.classList.remove('show')));
+
+  // Test button
+  testBtn?.addEventListener('click', async () => {
+    testBtn.disabled = true;
+    testBtn.textContent = 'Testing...';
+    try {
+      const res = await fetch(`${API_BASE}/api/supabase/test`, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message, 'success');
+        if (detail) detail.innerHTML = `<span style="color: var(--accent-emerald);">✓ Verified! Ping: ${data.latencyMs}ms</span>`;
+      } else {
+        showToast(data.message || data.error || 'Connection failed', 'warning');
+        if (detail) detail.innerHTML = `<span style="color: var(--accent-amber);">⚠️ ${data.message || data.error}</span>`;
+      }
+    } catch (err) {
+      showToast('Supabase test request failed', 'error');
+    } finally {
+      testBtn.disabled = false;
+      testBtn.textContent = 'Test Connection';
+    }
+  });
+
+  // Save button
+  saveBtn?.addEventListener('click', async () => {
+    const url = urlInput?.value.trim();
+    const key = keyInput?.value.trim();
+    if (!url || !key) {
+      showToast('Please enter both Supabase URL and Key', 'warning');
+      return;
+    }
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Connecting...';
+    try {
+      const res = await fetch(`${API_BASE}/api/supabase/config`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, key })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Supabase Cloud successfully connected and saved!', 'success');
+        appendTerminalLog(`[SUPABASE] Connected to PostgreSQL instance at ${url}`, 'success');
+        await checkStatus();
+        modal?.classList.remove('show');
+      } else {
+        showToast(data.error || 'Connection error', 'error');
+      }
+    } catch (err) {
+      showToast('Failed to save Supabase configuration', 'error');
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save & Connect';
+    }
+  });
+
+  // Sync button
+  syncBtn?.addEventListener('click', async () => {
+    syncBtn.disabled = true;
+    syncBtn.textContent = 'Syncing...';
+    try {
+      const res = await fetch(`${API_BASE}/api/supabase/sync`, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`Synced ${data.synced.agents} agents & ${data.synced.dlpEvents} DLP events to Supabase!`, 'success');
+        appendTerminalLog(`[SUPABASE_SYNC] Mirrored local database records to Supabase tables.`, 'success');
+      } else {
+        showToast(data.error || 'Sync failed', 'warning');
+      }
+    } catch (err) {
+      showToast('Sync request error', 'error');
+    } finally {
+      syncBtn.disabled = false;
+      syncBtn.textContent = 'Sync Local to Cloud';
+    }
   });
 }
 

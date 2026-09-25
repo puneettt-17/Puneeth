@@ -16,5 +16,8 @@
     "dlp"
   ],
   "author": "Enterprise AI Assistant",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.109.0"
+  }
 }

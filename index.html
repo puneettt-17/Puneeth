@@ -41,6 +41,10 @@
     </nav>
 
     <div class="nav-actions">
+      <button class="supabase-pill" id="supabase-status-pill" title="Configure Supabase Cloud Database">
+        <span class="status-dot" id="supabase-dot"></span>
+        <span id="supabase-status-text">Supabase Cloud</span>
+      </button>
       <div class="backend-pill" id="backend-status-pill">
         <span class="status-dot pulse" id="backend-dot"></span>
         <span id="backend-status-text">Backend API Connected</span>
@@ -463,6 +467,53 @@
       <div class="modal-footer">
         <button class="btn btn-secondary" id="doc-modal-cancel-btn">Cancel</button>
         <button class="btn btn-primary" id="modal-save-doc-btn">Ingest & Vectorize</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Supabase Cloud Database Configuration -->
+  <div class="modal-backdrop" id="supabase-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #3ecf8e;">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
+          <h3>Supabase Cloud Integration</h3>
+        </div>
+        <button class="modal-close" id="supabase-modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+          Connect your enterprise PostgreSQL database for persistent agent fleets, RAG embeddings with <code style="color: var(--accent-cyan);">pgvector</code>, and real-time DLP audit replication.
+        </p>
+
+        <div id="supabase-live-status-card" class="supabase-live-card">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.8rem; color: var(--text-sub);">Connection State:</span>
+            <span id="supabase-mode-badge" class="badge-status online">Loading...</span>
+          </div>
+          <div id="supabase-status-detail" style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.35rem;">Checking status...</div>
+        </div>
+
+        <label for="supabase-url-input">Supabase Project URL:</label>
+        <input type="text" id="supabase-url-input" class="form-control" placeholder="https://your-project-id.supabase.co">
+
+        <label for="supabase-key-input">Supabase API Key (Anon / Service Role):</label>
+        <input type="password" id="supabase-key-input" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+
+        <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem;">
+          <button class="btn btn-sm btn-outline" id="supabase-test-btn" style="flex: 1;">Test Connection</button>
+          <button class="btn btn-sm btn-secondary" id="supabase-sync-btn" style="flex: 1;">Sync Local to Cloud</button>
+        </div>
+
+        <div style="font-size: 0.75rem; color: var(--text-sub); border-top: 1px solid var(--border-color); padding-top: 0.75rem; margin-top: 0.5rem;">
+          💡 <strong>Setup Tip:</strong> Run the included <code style="color: var(--accent-emerald);">supabase/schema.sql</code> script in your Supabase SQL Editor to automatically initialize all tables and RLS security policies.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="supabase-modal-cancel-btn">Close</button>
+        <button class="btn btn-primary" id="supabase-save-btn">Save & Connect</button>
       </div>
     </div>
   </div>
