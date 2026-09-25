@@ -23,6 +23,12 @@ if (fs.existsSync(envPath)) {
   });
 }
 
+try {
+  if (typeof globalThis.WebSocket === 'undefined') {
+    globalThis.WebSocket = require('ws');
+  }
+} catch (e) {}
+
 let supabaseUrl = process.env.SUPABASE_URL || '';
 let supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
 
@@ -32,8 +38,12 @@ let isConfigured = false;
 function initSupabase(url, key) {
   if (url && key && url.startsWith('http')) {
     try {
+      let wsTransport;
+      try { wsTransport = require('ws'); } catch(e) {}
+
       client = createClient(url, key, {
-        auth: { persistSession: false }
+        auth: { persistSession: false },
+        ...(wsTransport ? { realtime: { transport: wsTransport } } : {})
       });
       supabaseUrl = url;
       supabaseKey = key;
