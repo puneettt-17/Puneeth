@@ -73,6 +73,9 @@ async function run() {
   assert(indexHtml.includes('id="login-alert"'), 'Inline login alert container exists');
   assert(indexHtml.includes('id="login-email"'), 'Email input field exists');
   assert(indexHtml.includes('id="login-password"'), 'Password input field exists');
+  assert(!indexHtml.includes('id="login-email" class="form-control" placeholder="user@domain.com or user@gmail.com" required value='), 'Login email starts completely empty by default');
+  assert(!indexHtml.includes('id="login-password" class="form-control" placeholder="Enter your password or token" required value='), 'Login password starts completely empty by default');
+  assert(indexHtml.includes('id="google-sso-modal"'), 'Google SSO Account Chooser modal exists (prompt=select_account)');
 
   // 3. Cryptographic Password Verification Logic
   console.log('\n--- 3. Cryptographic Password Engine ---');

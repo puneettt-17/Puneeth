@@ -426,41 +426,19 @@ function initAuthManager() {
     });
   }
 
-  // Google / Gemini Enterprise SSO Login
+  // Handle Demo Buttons Visibility (Only shown if ?demo=true or localhost)
+  const urlParams = new URLSearchParams(window.location.search);
+  const isDemoMode = urlParams.get('demo') === 'true' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const demoBox = document.getElementById('demo-logins-container');
+  if (demoBox) {
+    demoBox.style.display = isDemoMode ? 'block' : 'none';
+  }
+
+  // Google / Gemini Enterprise SSO Login with prompt: 'select_account'
   if (ssoBtn) {
-    ssoBtn.addEventListener('click', () => {
-      ssoBtn.disabled = true;
-      ssoBtn.innerHTML = `
-        <span class="status-dot pulse" style="background: var(--accent-emerald);"></span>
-        <span>Verifying Google Antigravity & Gemini SSO Token...</span>
-      `;
-
-      setTimeout(() => {
-        const user = {
-          email: 'puneeth@enterprise.gemini.ai',
-          role: 'Admin / SecOps Officer',
-          avatar: 'PG',
-          authenticatedVia: 'Google Gemini Workspace SSO',
-          timestamp: new Date().toISOString()
-        };
-
-        CURRENT_USER = user;
-        localStorage.setItem('aegis_auth_user', JSON.stringify(user));
-        applyAuthenticatedState(user);
-        showToast('Google Gemini SSO authentication verified! Access granted.', 'success');
-        appendTerminalLog(`[AUTH] SSO token validated: ${user.email} (IAM Clearance: Level 3).`, 'success');
-
-        ssoBtn.disabled = false;
-        ssoBtn.innerHTML = `
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
-            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
-          </svg>
-          <span>Continue with Google / Gemini SSO</span>
-        `;
-      }, 450);
+    ssoBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openGoogleSSOChooser();
     });
   }
 
@@ -476,6 +454,124 @@ function initAuthManager() {
     });
   }
 }
+
+// Google SSO Account Chooser Dialog (Forces account selection: prompt=select_account)
+window.openGoogleSSOChooser = function() {
+  const modal = document.getElementById('google-sso-modal');
+  if (!modal) return;
+
+  const listContainer = document.getElementById('google-accounts-list');
+  const customEmailInp = document.getElementById('google-custom-email');
+
+  if (customEmailInp) {
+    customEmailInp.value = '';
+    customEmailInp.classList.remove('input-error');
+  }
+
+  // Load known or previously used Google accounts
+  let savedAccounts = [];
+  try {
+    savedAccounts = JSON.parse(localStorage.getItem('aegis_google_accounts') || '[]');
+  } catch (e) {
+    savedAccounts = [];
+  }
+
+  if (listContainer) {
+    if (savedAccounts.length > 0) {
+      listContainer.innerHTML = `
+        <div style="font-size: 0.78rem; font-weight: 600; color: var(--text-sub); margin-bottom: 0.5rem;">
+          Saved Accounts (prompt=select_account):
+        </div>
+        ${savedAccounts.map(acc => `
+          <div class="google-account-item" onclick="proceedWithGoogleAccount('${acc.email}', '${acc.name}')">
+            <div class="google-account-avatar">${acc.avatar || acc.email.substring(0, 2).toUpperCase()}</div>
+            <div class="google-account-info">
+              <span class="google-account-name">${acc.name || acc.email.split('@')[0]}</span>
+              <span class="google-account-email">${acc.email}</span>
+            </div>
+          </div>
+        `).join('')}
+      `;
+      listContainer.style.display = 'block';
+    } else {
+      listContainer.innerHTML = '';
+      listContainer.style.display = 'none';
+    }
+  }
+
+  modal.style.display = 'flex';
+  setTimeout(() => {
+    if (customEmailInp) customEmailInp.focus();
+  }, 100);
+};
+
+window.closeGoogleSSOChooser = function() {
+  const modal = document.getElementById('google-sso-modal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.proceedWithGoogleAccount = function(explicitEmail = null, explicitName = null) {
+  let email = explicitEmail;
+  let name = explicitName;
+
+  if (!email) {
+    const input = document.getElementById('google-custom-email');
+    email = input ? input.value.trim() : '';
+  }
+
+  if (!email) {
+    const input = document.getElementById('google-custom-email');
+    if (input) {
+      input.classList.add('input-error');
+      input.focus();
+    }
+    showToast('Please enter your Google account email address.', 'error');
+    return;
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    const input = document.getElementById('google-custom-email');
+    if (input) {
+      input.classList.add('input-error');
+      input.focus();
+    }
+    showToast('Please enter a valid Google email address.', 'error');
+    return;
+  }
+
+  // Save account to recent Google list for fast switching
+  try {
+    let saved = JSON.parse(localStorage.getItem('aegis_google_accounts') || '[]');
+    if (!saved.some(a => a.email.toLowerCase() === email.toLowerCase())) {
+      saved.push({
+        email,
+        name: name || email.split('@')[0],
+        avatar: (name || email).substring(0, 2).toUpperCase()
+      });
+      localStorage.setItem('aegis_google_accounts', JSON.stringify(saved));
+    }
+  } catch (e) {}
+
+  // Authenticate session for the explicitly chosen Google account
+  closeGoogleSSOChooser();
+
+  const user = {
+    email,
+    name: name || email.split('@')[0],
+    role: 'Admin / SecOps Officer',
+    avatar: (name || email).substring(0, 2).toUpperCase(),
+    authenticatedVia: 'Google OAuth (prompt=select_account)',
+    timestamp: new Date().toISOString()
+  };
+
+  CURRENT_USER = user;
+  localStorage.setItem('aegis_auth_user', JSON.stringify(user));
+  applyAuthenticatedState(user);
+
+  showToast(`Signed in with Google as ${user.email}`, 'success');
+  appendTerminalLog(`[AUTH_OAUTH] Google Identity verified: ${user.email} (IAM Clearance: Level 3).`, 'success');
+};
 
 function showLoginScreen() {
   clearLoginError();

@@ -1933,6 +1933,98 @@ body {
   transform: scale(1.08);
 }
 
+/* Google SSO Account Chooser Dialog */
+.google-chooser-card {
+  max-width: 440px;
+  width: 92%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 30px var(--accent-glow);
+  position: relative;
+  animation: loginSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+[data-theme="white-green"] .google-chooser-card {
+  background: #ffffff;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12);
+}
+
+.google-chooser-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.google-account-item {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.03);
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.google-account-item:hover {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: var(--accent-emerald);
+}
+
+.google-account-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4285F4, #34A853);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.google-account-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.google-account-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.google-account-email {
+  font-size: 0.75rem;
+  color: var(--text-sub);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.google-chooser-footer {
+  margin-top: 1.25rem;
+  font-size: 0.72rem;
+  color: var(--text-sub);
+  line-height: 1.4;
+  border-top: 1px solid var(--border-color);
+  padding-top: 0.75rem;
+}
+
 </style>
 </head>
 <body>
@@ -2002,7 +2094,7 @@ body {
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                 <polyline points="22,6 12,13 2,6"/>
               </svg>
-              <input type="email" id="login-email" class="form-control" placeholder="user@domain.com or user@gmail.com" required value="admin@aegis.ai">
+              <input type="email" id="login-email" class="form-control" placeholder="user@domain.com or user@gmail.com" required autocomplete="username">
             </div>
           </div>
 
@@ -2016,7 +2108,7 @@ body {
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
               </svg>
-              <input type="password" id="login-password" class="form-control" placeholder="••••••••••••" required value="aegis-enterprise-2026">
+              <input type="password" id="login-password" class="form-control" placeholder="Enter your password or token" required autocomplete="current-password">
             </div>
           </div>
 
@@ -2066,7 +2158,7 @@ body {
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                 <circle cx="12" cy="7" r="4"/>
               </svg>
-              <input type="text" id="register-name" class="form-control" placeholder="e.g. Satish Biradi" required value="Satish Biradi">
+              <input type="text" id="register-name" class="form-control" placeholder="e.g. Satish Biradi" required autocomplete="name">
             </div>
           </div>
 
@@ -2077,7 +2169,7 @@ body {
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                 <polyline points="22,6 12,13 2,6"/>
               </svg>
-              <input type="email" id="register-email" class="form-control" placeholder="satishbiradi72@gmail.com" required value="satishbiradi72@gmail.com">
+              <input type="email" id="register-email" class="form-control" placeholder="name@domain.com" required autocomplete="email">
             </div>
           </div>
 
@@ -2124,8 +2216,8 @@ body {
           </button>
         </form>
 
-        <!-- Quick 1-Click Demo Logins -->
-        <div class="demo-logins-box">
+        <!-- Quick 1-Click Demo Logins (Hidden by default in production) -->
+        <div id="demo-logins-container" class="demo-logins-box" style="display: none;">
           <div class="demo-logins-title">⚡ QUICK 1-CLICK DEMO ACCESS</div>
           <div class="demo-btn-group">
             <button type="button" class="demo-quick-btn" onclick="quickFillLogin('admin@aegis.ai', 'Admin / SecOps Officer')">
@@ -2678,6 +2770,52 @@ body {
     </div>
   </div>
 
+  <!-- Google SSO Account Chooser Dialog (Forces Account Selection: prompt=select_account) -->
+  <div id="google-sso-modal" class="modal-overlay" style="display: none; z-index: 100000; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); align-items: center; justify-content: center;">
+    <div class="google-chooser-card">
+      <div class="google-chooser-header">
+        <svg width="24" height="24" viewBox="0 0 24 24" style="flex-shrink: 0;">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+        </svg>
+        <div style="flex: 1;">
+          <h3 style="font-size: 1.1rem; margin: 0; color: var(--text-main);">Choose an account</h3>
+          <p style="font-size: 0.78rem; margin: 0.15rem 0 0 0; color: var(--text-sub);">to continue to <strong style="color: var(--accent-emerald);">AEGIS.AI Enterprise</strong></p>
+        </div>
+        <button type="button" class="modal-close" onclick="closeGoogleSSOChooser()">&times;</button>
+      </div>
+
+      <div class="google-chooser-body">
+        <div id="google-accounts-list" class="google-accounts-list">
+          <!-- Dynamically populated if previous accounts were used -->
+        </div>
+
+        <div style="margin-top: 1rem; padding: 1rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+          <label for="google-custom-email" style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-main);">
+            Use another Google / Workspace Account:
+          </label>
+          <div class="input-with-icon" style="margin-bottom: 0.75rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            <input type="email" id="google-custom-email" class="form-control" placeholder="your.name@gmail.com" style="padding-left: 2.5rem;">
+          </div>
+          <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary" onclick="closeGoogleSSOChooser()" style="padding: 0.45rem 0.9rem; font-size: 0.82rem;">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="proceedWithGoogleAccount()" style="padding: 0.45rem 1.15rem; font-size: 0.82rem;">Sign In</button>
+          </div>
+        </div>
+
+        <div class="google-chooser-footer">
+          To continue, Google will share your email address and profile identity with AEGIS.AI to authenticate this session.
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Footer -->
   <footer class="footer-bar">
     <div class="footer-left">
@@ -3119,41 +3257,19 @@ function initAuthManager() {
     });
   }
 
-  // Google / Gemini Enterprise SSO Login
+  // Handle Demo Buttons Visibility (Only shown if ?demo=true or localhost)
+  const urlParams = new URLSearchParams(window.location.search);
+  const isDemoMode = urlParams.get('demo') === 'true' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const demoBox = document.getElementById('demo-logins-container');
+  if (demoBox) {
+    demoBox.style.display = isDemoMode ? 'block' : 'none';
+  }
+
+  // Google / Gemini Enterprise SSO Login with prompt: 'select_account'
   if (ssoBtn) {
-    ssoBtn.addEventListener('click', () => {
-      ssoBtn.disabled = true;
-      ssoBtn.innerHTML = `
-        <span class="status-dot pulse" style="background: var(--accent-emerald);"></span>
-        <span>Verifying Google Antigravity & Gemini SSO Token...</span>
-      `;
-
-      setTimeout(() => {
-        const user = {
-          email: 'puneeth@enterprise.gemini.ai',
-          role: 'Admin / SecOps Officer',
-          avatar: 'PG',
-          authenticatedVia: 'Google Gemini Workspace SSO',
-          timestamp: new Date().toISOString()
-        };
-
-        CURRENT_USER = user;
-        localStorage.setItem('aegis_auth_user', JSON.stringify(user));
-        applyAuthenticatedState(user);
-        showToast('Google Gemini SSO authentication verified! Access granted.', 'success');
-        appendTerminalLog(`[AUTH] SSO token validated: ${user.email} (IAM Clearance: Level 3).`, 'success');
-
-        ssoBtn.disabled = false;
-        ssoBtn.innerHTML = `
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
-            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
-          </svg>
-          <span>Continue with Google / Gemini SSO</span>
-        `;
-      }, 450);
+    ssoBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openGoogleSSOChooser();
     });
   }
 
@@ -3169,6 +3285,124 @@ function initAuthManager() {
     });
   }
 }
+
+// Google SSO Account Chooser Dialog (Forces account selection: prompt=select_account)
+window.openGoogleSSOChooser = function() {
+  const modal = document.getElementById('google-sso-modal');
+  if (!modal) return;
+
+  const listContainer = document.getElementById('google-accounts-list');
+  const customEmailInp = document.getElementById('google-custom-email');
+
+  if (customEmailInp) {
+    customEmailInp.value = '';
+    customEmailInp.classList.remove('input-error');
+  }
+
+  // Load known or previously used Google accounts
+  let savedAccounts = [];
+  try {
+    savedAccounts = JSON.parse(localStorage.getItem('aegis_google_accounts') || '[]');
+  } catch (e) {
+    savedAccounts = [];
+  }
+
+  if (listContainer) {
+    if (savedAccounts.length > 0) {
+      listContainer.innerHTML = `
+        <div style="font-size: 0.78rem; font-weight: 600; color: var(--text-sub); margin-bottom: 0.5rem;">
+          Saved Accounts (prompt=select_account):
+        </div>
+        ${savedAccounts.map(acc => `
+          <div class="google-account-item" onclick="proceedWithGoogleAccount('${acc.email}', '${acc.name}')">
+            <div class="google-account-avatar">${acc.avatar || acc.email.substring(0, 2).toUpperCase()}</div>
+            <div class="google-account-info">
+              <span class="google-account-name">${acc.name || acc.email.split('@')[0]}</span>
+              <span class="google-account-email">${acc.email}</span>
+            </div>
+          </div>
+        `).join('')}
+      `;
+      listContainer.style.display = 'block';
+    } else {
+      listContainer.innerHTML = '';
+      listContainer.style.display = 'none';
+    }
+  }
+
+  modal.style.display = 'flex';
+  setTimeout(() => {
+    if (customEmailInp) customEmailInp.focus();
+  }, 100);
+};
+
+window.closeGoogleSSOChooser = function() {
+  const modal = document.getElementById('google-sso-modal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.proceedWithGoogleAccount = function(explicitEmail = null, explicitName = null) {
+  let email = explicitEmail;
+  let name = explicitName;
+
+  if (!email) {
+    const input = document.getElementById('google-custom-email');
+    email = input ? input.value.trim() : '';
+  }
+
+  if (!email) {
+    const input = document.getElementById('google-custom-email');
+    if (input) {
+      input.classList.add('input-error');
+      input.focus();
+    }
+    showToast('Please enter your Google account email address.', 'error');
+    return;
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    const input = document.getElementById('google-custom-email');
+    if (input) {
+      input.classList.add('input-error');
+      input.focus();
+    }
+    showToast('Please enter a valid Google email address.', 'error');
+    return;
+  }
+
+  // Save account to recent Google list for fast switching
+  try {
+    let saved = JSON.parse(localStorage.getItem('aegis_google_accounts') || '[]');
+    if (!saved.some(a => a.email.toLowerCase() === email.toLowerCase())) {
+      saved.push({
+        email,
+        name: name || email.split('@')[0],
+        avatar: (name || email).substring(0, 2).toUpperCase()
+      });
+      localStorage.setItem('aegis_google_accounts', JSON.stringify(saved));
+    }
+  } catch (e) {}
+
+  // Authenticate session for the explicitly chosen Google account
+  closeGoogleSSOChooser();
+
+  const user = {
+    email,
+    name: name || email.split('@')[0],
+    role: 'Admin / SecOps Officer',
+    avatar: (name || email).substring(0, 2).toUpperCase(),
+    authenticatedVia: 'Google OAuth (prompt=select_account)',
+    timestamp: new Date().toISOString()
+  };
+
+  CURRENT_USER = user;
+  localStorage.setItem('aegis_auth_user', JSON.stringify(user));
+  applyAuthenticatedState(user);
+
+  showToast(`Signed in with Google as ${user.email}`, 'success');
+  appendTerminalLog(`[AUTH_OAUTH] Google Identity verified: ${user.email} (IAM Clearance: Level 3).`, 'success');
+};
 
 function showLoginScreen() {
   clearLoginError();
