@@ -658,6 +658,18 @@ const server = http.createServer(async (req, res) => {
   });
 });
 
+server.on('error', (err) => {
+  console.error('Server network error:', err);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[UNCAUGHT_EXCEPTION]', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[UNHANDLED_REJECTION]', reason);
+});
+
 server.listen(PORT, () => {
   console.log(`=======================================================`);
   console.log(` Aegis Enterprise AI Portal & Backend API Server`);

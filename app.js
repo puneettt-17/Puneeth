@@ -678,7 +678,8 @@ function initHeaderActionButtons() {
 
 // Helpers
 function formatTimeAgo(date) {
-  const seconds = Math.floor((new Date() - date) / 1000);
+  if (!date || isNaN(new Date(date).getTime())) return 'Recently';
+  const seconds = Math.floor((new Date() - new Date(date)) / 1000);
   if (seconds < 60) return 'Just now';
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m ago`;
@@ -687,7 +688,8 @@ function formatTimeAgo(date) {
 }
 
 function escapeHTML(str) {
-  return str.replace(/[&<>'"]/g, 
+  if (!str) return '';
+  return String(str).replace(/[&<>'"]/g, 
     tag => ({
       '&': '&amp;',
       '<': '&lt;',
