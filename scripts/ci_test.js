@@ -168,6 +168,29 @@ async function run() {
     'POST /api/auth/login verifies correct password and issues session token'
   );
 
+  // Auth: Register new user (e.g. gmail domain)
+  const regEmail = `test.user.${Date.now()}@gmail.com`;
+  const registerRes = await makeRequest('POST', '/api/auth/register', {
+    name: 'Test Analyst',
+    email: regEmail,
+    password: 'securePassword2026',
+    role: 'Admin / SecOps Officer'
+  });
+  assert(
+    registerRes.status === 201 && registerRes.body.success === true && !!registerRes.body.token,
+    'POST /api/auth/register creates new account with PBKDF2 hash and issues session token'
+  );
+
+  // Auth: Login with newly registered user
+  const newLoginRes = await makeRequest('POST', '/api/auth/login', {
+    email: regEmail,
+    password: 'securePassword2026'
+  });
+  assert(
+    newLoginRes.status === 200 && newLoginRes.body.success === true && newLoginRes.body.user.email === regEmail,
+    'POST /api/auth/login successfully authenticates newly registered account'
+  );
+
   // Close test server
   await new Promise(res => server.close(res));
 

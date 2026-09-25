@@ -33,8 +33,14 @@
         </div>
 
         <div class="login-heading">
-          <h3>Authentication Required</h3>
-          <p>Sign in with your enterprise credentials to access the AI Control Tower.</p>
+          <h3 id="auth-title">Authentication Gateway</h3>
+          <p id="auth-subtitle">Sign in or create your credentials to access the AI Control Tower.</p>
+        </div>
+
+        <!-- Auth Mode Switcher (Sign In vs Create Account) -->
+        <div class="auth-tabs">
+          <button type="button" id="tab-login" class="auth-tab active" onclick="switchAuthTab('login')">Sign In</button>
+          <button type="button" id="tab-register" class="auth-tab" onclick="switchAuthTab('register')">Create Account</button>
         </div>
 
         <!-- 1-Click SSO Button -->
@@ -48,11 +54,11 @@
           <span>Continue with Google / Gemini SSO</span>
         </button>
 
-        <div class="login-divider">
+        <div id="auth-divider" class="login-divider">
           <span>OR WORKSPACE CREDENTIALS</span>
         </div>
 
-        <!-- Login Form -->
+        <!-- Sign In Form -->
         <form id="login-form" class="login-form">
           <!-- Inline Alert Box for Error / Validation Feedback -->
           <div id="login-alert" class="login-alert-box error" style="display: none;">
@@ -112,6 +118,83 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="5" y1="12" x2="19" y2="12"></line>
               <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
+        </form>
+
+        <!-- Create Account / Register Form -->
+        <form id="register-form" class="login-form" style="display: none;">
+          <!-- Inline Alert Box for Registration Feedback -->
+          <div id="register-alert" class="login-alert-box error" style="display: none;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <div id="register-alert-message" class="login-alert-msg">An account with this email already exists</div>
+          </div>
+
+          <div class="form-group">
+            <label for="register-name">Full Name</label>
+            <div class="input-with-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+              <input type="text" id="register-name" class="form-control" placeholder="e.g. Satish Biradi" required value="Satish Biradi">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="register-email">Email Address</label>
+            <div class="input-with-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+              <input type="email" id="register-email" class="form-control" placeholder="satishbiradi72@gmail.com" required value="satishbiradi72@gmail.com">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <label for="register-password">Password</label>
+              <span class="auth-hint">Min. 6 characters</span>
+            </div>
+            <div class="input-with-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              <input type="password" id="register-password" class="form-control" placeholder="Create a secure password" required minlength="6">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="register-confirm-password">Confirm Password</label>
+            <div class="input-with-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              <input type="password" id="register-confirm-password" class="form-control" placeholder="Re-enter your password" required minlength="6">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="register-role">Operational Role</label>
+            <select id="register-role" class="form-control">
+              <option value="Admin / SecOps Officer">Admin / SecOps Officer (Full Control)</option>
+              <option value="AI Fleet Engineer">AI Fleet Engineer (Orchestrator Access)</option>
+              <option value="Data & Analytics Analyst">Data & Analytics Analyst (RAG Access)</option>
+              <option value="Security Auditor">Security Auditor (DLP Inspection Only)</option>
+            </select>
+          </div>
+
+          <button type="submit" id="register-submit-btn" class="btn btn-primary btn-block">
+            <span>Create Account & Access Control Tower</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"></polyline>
             </svg>
           </button>
         </form>

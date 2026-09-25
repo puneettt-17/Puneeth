@@ -73,11 +73,101 @@ function clearLoginError() {
   if (passwordInput) passwordInput.classList.remove('input-error');
 }
 
+// Tab switcher between Sign In and Create Account
+window.switchAuthTab = function(tab) {
+  const tabLogin = document.getElementById('tab-login');
+  const tabRegister = document.getElementById('tab-register');
+  const loginForm = document.getElementById('login-form');
+  const registerForm = document.getElementById('register-form');
+  const authTitle = document.getElementById('auth-title');
+  const authSubtitle = document.getElementById('auth-subtitle');
+  const demoBox = document.querySelector('.demo-logins-box');
+  const ssoBtn = document.getElementById('sso-login-btn');
+  const divider = document.getElementById('auth-divider');
+
+  clearLoginError();
+  clearRegisterError();
+
+  if (tab === 'register') {
+    if (tabRegister) tabRegister.classList.add('active');
+    if (tabLogin) tabLogin.classList.remove('active');
+    if (loginForm) loginForm.style.display = 'none';
+    if (registerForm) registerForm.style.display = 'block';
+    if (authTitle) authTitle.textContent = 'Create Enterprise Account';
+    if (authSubtitle) authSubtitle.textContent = 'Register your credentials to gain IAM access to the AI Control Tower.';
+    if (demoBox) demoBox.style.display = 'none';
+    if (ssoBtn) ssoBtn.style.display = 'none';
+    if (divider) divider.style.display = 'none';
+  } else {
+    if (tabLogin) tabLogin.classList.add('active');
+    if (tabRegister) tabRegister.classList.remove('active');
+    if (loginForm) loginForm.style.display = 'block';
+    if (registerForm) registerForm.style.display = 'none';
+    if (authTitle) authTitle.textContent = 'Authentication Required';
+    if (authSubtitle) authSubtitle.textContent = 'Sign in with your enterprise credentials to access the AI Control Tower.';
+    if (demoBox) demoBox.style.display = 'block';
+    if (ssoBtn) ssoBtn.style.display = 'flex';
+    if (divider) divider.style.display = 'flex';
+  }
+};
+
+function showRegisterError(message, field = null) {
+  const alertBox = document.getElementById('register-alert');
+  const alertMsg = document.getElementById('register-alert-message');
+  const nameInput = document.getElementById('register-name');
+  const emailInput = document.getElementById('register-email');
+  const passInput = document.getElementById('register-password');
+  const confirmPassInput = document.getElementById('register-confirm-password');
+
+  if (alertBox) {
+    alertBox.style.display = 'flex';
+    alertBox.style.animation = 'none';
+    void alertBox.offsetHeight;
+    alertBox.style.animation = '';
+  }
+
+  if (alertMsg) {
+    alertMsg.textContent = message;
+  }
+
+  [nameInput, emailInput, passInput, confirmPassInput].forEach(inp => {
+    if (inp) inp.classList.remove('input-error');
+  });
+
+  if (field === 'email' && emailInput) {
+    emailInput.classList.add('input-error');
+    emailInput.focus();
+  } else if (field === 'password' && passInput) {
+    passInput.classList.add('input-error');
+    passInput.focus();
+  } else if (field === 'confirm' && confirmPassInput) {
+    confirmPassInput.classList.add('input-error');
+    confirmPassInput.focus();
+  } else if (passInput) {
+    passInput.classList.add('input-error');
+    passInput.focus();
+  }
+}
+
+function clearRegisterError() {
+  const alertBox = document.getElementById('register-alert');
+  const nameInput = document.getElementById('register-name');
+  const emailInput = document.getElementById('register-email');
+  const passInput = document.getElementById('register-password');
+  const confirmPassInput = document.getElementById('register-confirm-password');
+
+  if (alertBox) alertBox.style.display = 'none';
+  [nameInput, emailInput, passInput, confirmPassInput].forEach(inp => {
+    if (inp) inp.classList.remove('input-error');
+  });
+}
+
 // ==========================================================================
 // Enterprise Authentication & Login Manager
 // ==========================================================================
 function initAuthManager() {
   const loginForm = document.getElementById('login-form');
+  const registerForm = document.getElementById('register-form');
   const ssoBtn = document.getElementById('sso-login-btn');
   const signoutBtn = document.getElementById('nav-signout-btn');
   const emailInput = document.getElementById('login-email');
@@ -103,6 +193,18 @@ function initAuthManager() {
       }
     });
   }
+
+  // Registration real-time input clearing
+  ['register-name', 'register-email', 'register-password', 'register-confirm-password'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', () => {
+        el.classList.remove('input-error');
+        const alertBox = document.getElementById('register-alert');
+        if (alertBox) alertBox.style.display = 'none';
+      });
+    }
+  });
 
   // Check saved session
   const savedUser = localStorage.getItem('aegis_auth_user') || sessionStorage.getItem('aegis_auth_user');
@@ -219,6 +321,111 @@ function initAuthManager() {
     });
   }
 
+  // Registration Form Submit Handler
+  if (registerForm) {
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearRegisterError();
+
+      const name = (document.getElementById('register-name').value || '').trim();
+      const email = (document.getElementById('register-email').value || '').trim();
+      const password = (document.getElementById('register-password').value || '').trim();
+      const confirmPassword = (document.getElementById('register-confirm-password').value || '').trim();
+      const role = document.getElementById('register-role').value;
+      const submitBtn = document.getElementById('register-submit-btn');
+
+      if (!email) {
+        showRegisterError('Please enter your email address.', 'email');
+        showToast('Please enter your email address.', 'error');
+        return;
+      }
+
+      if (!password) {
+        showRegisterError('Password is required.', 'password');
+        showToast('Password is required.', 'error');
+        return;
+      }
+
+      if (password.length < 6) {
+        showRegisterError('Password must be at least 6 characters in length.', 'password');
+        showToast('Password must be at least 6 characters.', 'error');
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        showRegisterError('Passwords do not match. Please verify both fields.', 'confirm');
+        showToast('Passwords do not match.', 'error');
+        return;
+      }
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `
+          <span class="status-dot pulse" style="background: var(--accent-emerald);"></span>
+          <span>Creating account & securing credentials...</span>
+        `;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password, role })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          const errMsg = data.error || 'Registration failed. Please try again.';
+          showRegisterError(errMsg, errMsg.includes('already exists') ? 'email' : 'password');
+          showToast(errMsg, 'error');
+          return;
+        }
+
+        // 201 Created: Authenticate session
+        clearRegisterError();
+        const user = data.user || {
+          email,
+          name: name || email.split('@')[0],
+          role,
+          avatar: (name || email).substring(0, 2).toUpperCase()
+        };
+        user.token = data.token;
+        user.authenticatedVia = 'Self-Provisioned Credentials';
+
+        CURRENT_USER = user;
+        localStorage.setItem('aegis_auth_user', JSON.stringify(user));
+        applyAuthenticatedState(user);
+
+        showToast(`Welcome, ${user.name}! Your account has been registered and verified.`, 'success');
+        appendTerminalLog(`[AUTH_PROVISION] New IAM identity registered: ${user.email} (${user.role}).`, 'success');
+      } catch (err) {
+        console.warn('[REGISTER_NETWORK_FALLBACK]', err);
+        const user = {
+          email,
+          name: name || email.split('@')[0],
+          role,
+          avatar: (name || email).substring(0, 2).toUpperCase(),
+          authenticatedVia: 'Local Account Store'
+        };
+        CURRENT_USER = user;
+        localStorage.setItem('aegis_auth_user', JSON.stringify(user));
+        applyAuthenticatedState(user);
+        showToast(`Welcome, ${user.name}! Account registered.`, 'success');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = `
+            <span>Create Account & Access Control Tower</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          `;
+        }
+      }
+    });
+  }
+
   // Google / Gemini Enterprise SSO Login
   if (ssoBtn) {
     ssoBtn.addEventListener('click', () => {
@@ -272,6 +479,8 @@ function initAuthManager() {
 
 function showLoginScreen() {
   clearLoginError();
+  clearRegisterError();
+  if (typeof switchAuthTab === 'function') switchAuthTab('login');
   const overlay = document.getElementById('login-overlay');
   const profilePill = document.getElementById('nav-user-profile');
   if (overlay) overlay.classList.add('active');

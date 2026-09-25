@@ -1571,6 +1571,46 @@ body {
   margin: 0;
 }
 
+/* Auth Mode Switcher (Sign In vs Create Account) */
+.auth-tabs {
+  display: flex;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  gap: 4px;
+  margin: 1.25rem 0 1rem 0;
+}
+
+[data-theme="white-green"] .auth-tabs {
+  background: #f1f5f9;
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--text-sub);
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: var(--transition);
+  text-align: center;
+}
+
+.auth-tab:hover {
+  color: var(--text-main);
+}
+
+.auth-tab.active {
+  background: var(--accent-emerald);
+  color: #ffffff;
+  box-shadow: 0 2px 8px var(--accent-glow);
+}
+
 /* SSO Button */
 .btn-sso {
   width: 100%;

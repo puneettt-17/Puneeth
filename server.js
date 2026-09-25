@@ -244,6 +244,16 @@ function verifyPassword(password, salt, storedHash) {
   });
 }
 
+// Cryptographic Password Hash Generator
+function hashPassword(password, salt) {
+  return new Promise((resolve, reject) => {
+    crypto.pbkdf2(password, salt, 100000, 64, 'sha512', (err, derivedKey) => {
+      if (err) return reject(err);
+      resolve(derivedKey.toString('hex'));
+    });
+  });
+}
+
 // Enterprise DLP & Security Engine
 function scanForDLP(text, sourceAgent = 'User Interface') {
   const detections = [];
@@ -404,6 +414,80 @@ async function handleRequest(req, res) {
         return sendJSON(res, 200, {
           success: true,
           message: 'Authentication successful',
+          token: sessionToken,
+          user: userPayload
+        });
+      } catch (err) {
+        return sendJSON(res, 500, { success: false, error: err.message });
+      }
+    }
+
+    // POST /api/auth/register - Create New Account
+    if (pathname === '/api/auth/register' && method === 'POST') {
+      try {
+        const body = await parseBody(req);
+        const { email, password, name, role } = body;
+
+        if (!email || !password) {
+          return sendJSON(res, 400, {
+            success: false,
+            error: 'Email and password are required'
+          });
+        }
+
+        const cleanEmail = email.trim().toLowerCase();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(cleanEmail)) {
+          return sendJSON(res, 400, {
+            success: false,
+            error: 'Please enter a valid email address'
+          });
+        }
+
+        if (password.length < 6) {
+          return sendJSON(res, 400, {
+            success: false,
+            error: 'Password must be at least 6 characters in length'
+          });
+        }
+
+        const existingUser = (db.users || []).find(u => u.email.toLowerCase() === cleanEmail);
+        if (existingUser) {
+          return sendJSON(res, 409, {
+            success: false,
+            error: 'An account with this email address already exists. Please sign in.'
+          });
+        }
+
+        // Generate cryptographically secure salt and PBKDF2 hash
+        const salt = crypto.randomBytes(16).toString('hex');
+        const passwordHash = await hashPassword(password, salt);
+
+        const newUser = {
+          id: 'usr-' + crypto.randomBytes(4).toString('hex'),
+          email: cleanEmail,
+          name: name && name.trim() ? name.trim() : cleanEmail.split('@')[0],
+          role: role || 'Admin / SecOps Officer',
+          salt,
+          passwordHash
+        };
+
+        if (!db.users) db.users = [];
+        db.users.push(newUser);
+        writeDatabase(db);
+
+        const sessionToken = crypto.randomBytes(32).toString('hex');
+        const userPayload = {
+          id: newUser.id,
+          email: newUser.email,
+          name: newUser.name,
+          role: newUser.role,
+          avatar: newUser.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+        };
+
+        return sendJSON(res, 201, {
+          success: true,
+          message: 'Account created successfully',
           token: sessionToken,
           user: userPayload
         });
