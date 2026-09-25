@@ -369,14 +369,14 @@ async function handleRequest(req, res) {
         }
 
         const cleanEmail = email.trim().toLowerCase();
+        // Lookup user in database regardless of domain (corporate, gmail.com, etc.)
         const user = (db.users || []).find(u => u.email.toLowerCase() === cleanEmail);
 
         if (!user) {
-          // Return 401 Unauthorized specifying invalid email
+          // Return generic 401 Unauthorized for security (no domain-specific rejection)
           return sendJSON(res, 401, {
             success: false,
-            error: 'Invalid email address. No corporate account found for this email.',
-            field: 'email'
+            error: 'Invalid email or password'
           });
         }
 
@@ -384,11 +384,10 @@ async function handleRequest(req, res) {
         const isPasswordValid = await verifyPassword(password, user.salt, user.passwordHash);
 
         if (!isPasswordValid) {
-          // Return 401 Unauthorized specifying invalid password
+          // Return generic 401 Unauthorized
           return sendJSON(res, 401, {
             success: false,
-            error: 'Invalid password. Please check your credentials and try again.',
-            field: 'password'
+            error: 'Invalid email or password'
           });
         }
 

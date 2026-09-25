@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initHeaderActionButtons();
 });
 
-function showLoginError(message, field = null) {
+function showLoginError(message = 'Invalid email or password', field = null) {
   const alertBox = document.getElementById('login-alert');
   const alertMsg = document.getElementById('login-alert-message');
   const emailInput = document.getElementById('login-email');
@@ -56,11 +56,7 @@ function showLoginError(message, field = null) {
     passwordInput.focus();
     passwordInput.select();
   } else {
-    const lower = (message || '').toLowerCase();
-    if (lower.includes('email') && emailInput) {
-      emailInput.classList.add('input-error');
-      emailInput.focus();
-    } else if (lower.includes('password') && passwordInput) {
+    if (passwordInput) {
       passwordInput.classList.add('input-error');
       passwordInput.focus();
     }
@@ -135,13 +131,13 @@ function initAuthManager() {
       const submitBtn = document.getElementById('login-submit-btn');
 
       if (!email) {
-        showLoginError('Invalid email: Please enter your corporate email address.', 'email');
-        showToast('Please enter your corporate email address.', 'error');
+        showLoginError('Please enter your email address.', 'email');
+        showToast('Please enter your email address.', 'error');
         return;
       }
 
       if (!password) {
-        showLoginError('Invalid password: Password is required.', 'password');
+        showLoginError('Please enter your password / access token.', 'password');
         showToast('Please enter your password / access token.', 'error');
         return;
       }
@@ -165,10 +161,9 @@ function initAuthManager() {
 
         // 401 Unauthorized or failure: Strictly deny access
         if (!res.ok || !data.success) {
-          const errMsg = data.error || (data.field === 'email' ? 'Invalid email address' : 'Invalid password');
-          const errField = data.field || (errMsg.toLowerCase().includes('email') ? 'email' : 'password');
+          const errMsg = data.error || 'Invalid email or password';
 
-          showLoginError(errMsg, errField);
+          showLoginError(errMsg);
           showToast(errMsg, 'error');
           appendTerminalLog(`[AUTH_DENIED] Authentication failed for ${email}: ${errMsg} (HTTP ${res.status})`, 'warning');
           return;
@@ -205,15 +200,8 @@ function initAuthManager() {
           applyAuthenticatedState(user);
           showToast(`Welcome back, ${email} (Offline Mode)`, 'success');
         } else {
-          const knownEmails = ['admin@aegis.ai', 'secops@aegis.ai', 'engineer@aegis.ai'];
-          const isKnownEmail = knownEmails.includes(email.toLowerCase());
-          const errMsg = !isKnownEmail
-            ? 'Invalid email address. No corporate account found for this email.'
-            : 'Invalid password. Please check your credentials and try again.';
-          const errField = !isKnownEmail ? 'email' : 'password';
-
-          showLoginError(errMsg, errField);
-          showToast(errMsg, 'error');
+          showLoginError('Invalid email or password');
+          showToast('Invalid email or password', 'error');
           appendTerminalLog(`[AUTH_DENIED] Invalid credentials for ${email}. Access rejected.`, 'warning');
         }
       } finally {
