@@ -372,10 +372,11 @@ async function handleRequest(req, res) {
         const user = (db.users || []).find(u => u.email.toLowerCase() === cleanEmail);
 
         if (!user) {
-          // Prevent account enumeration by returning identical generic 401 error
+          // Return 401 Unauthorized specifying invalid email
           return sendJSON(res, 401, {
             success: false,
-            error: 'Invalid email or password'
+            error: 'Invalid email address. No corporate account found for this email.',
+            field: 'email'
           });
         }
 
@@ -383,10 +384,11 @@ async function handleRequest(req, res) {
         const isPasswordValid = await verifyPassword(password, user.salt, user.passwordHash);
 
         if (!isPasswordValid) {
-          // Reject invalid passwords with 401 Unauthorized
+          // Return 401 Unauthorized specifying invalid password
           return sendJSON(res, 401, {
             success: false,
-            error: 'Invalid email or password'
+            error: 'Invalid password. Please check your credentials and try again.',
+            field: 'password'
           });
         }
 

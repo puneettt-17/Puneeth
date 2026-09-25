@@ -128,17 +128,31 @@ async function runTestSuite(baseUrl, label) {
       }
     },
     {
-      name: '8. Authentication: Reject Incorrect Password (401 Unauthorized)',
+      name: '8a. Authentication: Reject Nonexistent Email (401 Unauthorized)',
+      run: async () => {
+        const res = await request(`${baseUrl}/api/auth/login`, {
+          method: 'POST',
+          body: { email: 'fakeuser@nonexistent.ai', password: 'anypassword' }
+        });
+        if (res.statusCode !== 401) throw new Error(`Expected 401 Unauthorized, got ${res.statusCode}`);
+        if (res.data.success !== false || !res.data.error.includes('Invalid email') || res.data.field !== 'email') {
+          throw new Error(`Unexpected error response for invalid email: ${JSON.stringify(res.data)}`);
+        }
+        return `Passed: HTTP 401 Unauthorized returned ("${res.data.error}", field: ${res.data.field})`;
+      }
+    },
+    {
+      name: '8b. Authentication: Reject Incorrect Password (401 Unauthorized)',
       run: async () => {
         const res = await request(`${baseUrl}/api/auth/login`, {
           method: 'POST',
           body: { email: 'admin@aegis.ai', password: 'TOTALLY_WRONG_PASSWORD' }
         });
         if (res.statusCode !== 401) throw new Error(`Expected 401 Unauthorized, got ${res.statusCode}`);
-        if (res.data.success !== false || res.data.error !== 'Invalid email or password') {
-          throw new Error(`Unexpected error message: ${JSON.stringify(res.data)}`);
+        if (res.data.success !== false || !res.data.error.includes('Invalid password') || res.data.field !== 'password') {
+          throw new Error(`Unexpected error response for invalid password: ${JSON.stringify(res.data)}`);
         }
-        return `Passed: HTTP 401 Unauthorized returned ("${res.data.error}")`;
+        return `Passed: HTTP 401 Unauthorized returned ("${res.data.error}", field: ${res.data.field})`;
       }
     },
     {

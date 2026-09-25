@@ -25,6 +25,58 @@ document.addEventListener('DOMContentLoaded', () => {
   initHeaderActionButtons();
 });
 
+function showLoginError(message, field = null) {
+  const alertBox = document.getElementById('login-alert');
+  const alertMsg = document.getElementById('login-alert-message');
+  const emailInput = document.getElementById('login-email');
+  const passwordInput = document.getElementById('login-password');
+
+  if (alertBox) {
+    alertBox.style.display = 'flex';
+    alertBox.style.animation = 'none';
+    void alertBox.offsetHeight; // trigger DOM reflow to restart shake animation
+    alertBox.style.animation = '';
+  }
+
+  if (alertMsg) {
+    alertMsg.textContent = message;
+  }
+
+  // Clear previous field errors
+  if (emailInput) emailInput.classList.remove('input-error');
+  if (passwordInput) passwordInput.classList.remove('input-error');
+
+  // Highlight and focus the specific invalid field
+  if (field === 'email' && emailInput) {
+    emailInput.classList.add('input-error');
+    emailInput.focus();
+    emailInput.select();
+  } else if (field === 'password' && passwordInput) {
+    passwordInput.classList.add('input-error');
+    passwordInput.focus();
+    passwordInput.select();
+  } else {
+    const lower = (message || '').toLowerCase();
+    if (lower.includes('email') && emailInput) {
+      emailInput.classList.add('input-error');
+      emailInput.focus();
+    } else if (lower.includes('password') && passwordInput) {
+      passwordInput.classList.add('input-error');
+      passwordInput.focus();
+    }
+  }
+}
+
+function clearLoginError() {
+  const alertBox = document.getElementById('login-alert');
+  const emailInput = document.getElementById('login-email');
+  const passwordInput = document.getElementById('login-password');
+
+  if (alertBox) alertBox.style.display = 'none';
+  if (emailInput) emailInput.classList.remove('input-error');
+  if (passwordInput) passwordInput.classList.remove('input-error');
+}
+
 // ==========================================================================
 // Enterprise Authentication & Login Manager
 // ==========================================================================
@@ -32,6 +84,29 @@ function initAuthManager() {
   const loginForm = document.getElementById('login-form');
   const ssoBtn = document.getElementById('sso-login-btn');
   const signoutBtn = document.getElementById('nav-signout-btn');
+  const emailInput = document.getElementById('login-email');
+  const passwordInput = document.getElementById('login-password');
+
+  // Real-time input error clearing as user types
+  if (emailInput) {
+    emailInput.addEventListener('input', () => {
+      emailInput.classList.remove('input-error');
+      if (passwordInput && !passwordInput.classList.contains('input-error')) {
+        const alertBox = document.getElementById('login-alert');
+        if (alertBox) alertBox.style.display = 'none';
+      }
+    });
+  }
+
+  if (passwordInput) {
+    passwordInput.addEventListener('input', () => {
+      passwordInput.classList.remove('input-error');
+      if (emailInput && !emailInput.classList.contains('input-error')) {
+        const alertBox = document.getElementById('login-alert');
+        if (alertBox) alertBox.style.display = 'none';
+      }
+    });
+  }
 
   // Check saved session
   const savedUser = localStorage.getItem('aegis_auth_user') || sessionStorage.getItem('aegis_auth_user');
@@ -51,14 +126,23 @@ function initAuthManager() {
   if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const email = document.getElementById('login-email').value.trim();
-      const password = document.getElementById('login-password').value.trim();
+      clearLoginError();
+
+      const email = emailInput ? emailInput.value.trim() : '';
+      const password = passwordInput ? passwordInput.value.trim() : '';
       const role = document.getElementById('login-role').value;
       const remember = document.getElementById('login-remember').checked;
       const submitBtn = document.getElementById('login-submit-btn');
 
-      if (!email || !password) {
-        showToast('Please enter both corporate email and password.', 'error');
+      if (!email) {
+        showLoginError('Invalid email: Please enter your corporate email address.', 'email');
+        showToast('Please enter your corporate email address.', 'error');
+        return;
+      }
+
+      if (!password) {
+        showLoginError('Invalid password: Password is required.', 'password');
+        showToast('Please enter your password / access token.', 'error');
         return;
       }
 
@@ -81,22 +165,17 @@ function initAuthManager() {
 
         // 401 Unauthorized or failure: Strictly deny access
         if (!res.ok || !data.success) {
-          const errMsg = data.error || 'Invalid email or password';
+          const errMsg = data.error || (data.field === 'email' ? 'Invalid email address' : 'Invalid password');
+          const errField = data.field || (errMsg.toLowerCase().includes('email') ? 'email' : 'password');
+
+          showLoginError(errMsg, errField);
           showToast(errMsg, 'error');
           appendTerminalLog(`[AUTH_DENIED] Authentication failed for ${email}: ${errMsg} (HTTP ${res.status})`, 'warning');
-
-          const passwordInput = document.getElementById('login-password');
-          if (passwordInput) {
-            passwordInput.style.borderColor = 'var(--accent-rose)';
-            passwordInput.focus();
-            setTimeout(() => {
-              if (passwordInput) passwordInput.style.borderColor = '';
-            }, 3500);
-          }
           return;
         }
 
         // 200 OK: Authentication successful
+        clearLoginError();
         const user = data.user || {
           email,
           role,
@@ -116,15 +195,25 @@ function initAuthManager() {
         showToast(`Welcome back, ${user.name || user.email}`, 'success');
         appendTerminalLog(`[AUTH_SUCCESS] Verified session token issued for ${user.email} (${user.role}).`, 'success');
       } catch (err) {
+        console.warn('[AUTH_NETWORK_FALLBACK]', err);
         // Fallback offline validation check if server network is unreachable
         if (email.toLowerCase() === 'admin@aegis.ai' && password === 'aegis-enterprise-2026') {
+          clearLoginError();
           const user = { email, role, avatar: 'AD', authenticatedVia: 'Offline Mode' };
           CURRENT_USER = user;
           localStorage.setItem('aegis_auth_user', JSON.stringify(user));
           applyAuthenticatedState(user);
           showToast(`Welcome back, ${email} (Offline Mode)`, 'success');
         } else {
-          showToast('Invalid email or password', 'error');
+          const knownEmails = ['admin@aegis.ai', 'secops@aegis.ai', 'engineer@aegis.ai'];
+          const isKnownEmail = knownEmails.includes(email.toLowerCase());
+          const errMsg = !isKnownEmail
+            ? 'Invalid email address. No corporate account found for this email.'
+            : 'Invalid password. Please check your credentials and try again.';
+          const errField = !isKnownEmail ? 'email' : 'password';
+
+          showLoginError(errMsg, errField);
+          showToast(errMsg, 'error');
           appendTerminalLog(`[AUTH_DENIED] Invalid credentials for ${email}. Access rejected.`, 'warning');
         }
       } finally {
@@ -194,6 +283,7 @@ function initAuthManager() {
 }
 
 function showLoginScreen() {
+  clearLoginError();
   const overlay = document.getElementById('login-overlay');
   const profilePill = document.getElementById('nav-user-profile');
   if (overlay) overlay.classList.add('active');
@@ -216,6 +306,7 @@ function applyAuthenticatedState(user) {
 
 // 1-Click Quick Demo Login Helper
 window.quickFillLogin = function(email, role) {
+  clearLoginError();
   const emailInput = document.getElementById('login-email');
   const roleSelect = document.getElementById('login-role');
   const passwordInput = document.getElementById('login-password');
