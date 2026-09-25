@@ -14,4 +14,8 @@ html = html.replace('<link rel="stylesheet" href="styles.css">', `<style>\n${css
 html = html.replace('<script src="app.js"></script>', `<script>\n${js}\n</script>`);
 
 fs.writeFileSync(outPath, html, 'utf-8');
+const publicOutPath = path.join(__dirname, '..', 'public', 'bundle.html');
+if (fs.existsSync(path.join(__dirname, '..', 'public'))) {
+  fs.writeFileSync(publicOutPath, html, 'utf-8');
+}
 console.log(`Successfully generated standalone bundle at: ${outPath} (${(fs.statSync(outPath).size / 1024).toFixed(1)} KB)`);

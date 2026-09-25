@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aegis AI | Enterprise Intelligence & Agent Operations Portal</title>
+  <meta name="description" content="Enterprise AI Operations Portal powered by Google Antigravity and Gemini Enterprise with full REST backend and real-time agent orchestration.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Ambient background glow elements -->
+  <div class="glow-orb orb-1"></div>
+  <div class="glow-orb orb-2"></div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <div class="nav-brand">
+      <div class="brand-logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <div>
+        <span class="brand-name">AEGIS<span class="brand-highlight">.AI</span></span>
+        <span class="brand-badge">Enterprise Edition</span>
+      </div>
+    </div>
+
+    <nav class="nav-links">
+      <button class="nav-btn active" data-target="overview-section">Dashboard</button>
+      <button class="nav-btn" data-target="orchestrator-section">Agent Orchestrator</button>
+      <button class="nav-btn" data-target="guardrails-section">Guardrails & DLP</button>
+      <button class="nav-btn" data-target="rag-section">Enterprise RAG</button>
+      <button class="nav-btn" data-target="connectors-section">Connectors</button>
+    </nav>
+
+    <div class="nav-actions">
+      <button class="theme-toggle-pill" id="theme-toggle-btn" title="Toggle White & Green Theme">
+        <svg id="theme-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1" x2="12" y2="3"/>
+          <line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/>
+          <line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+        <span id="theme-mode-text">Theme</span>
+      </button>
+      <button class="supabase-pill" id="supabase-status-pill" title="Configure Supabase Cloud Database">
+        <span class="status-dot" id="supabase-dot"></span>
+        <span id="supabase-status-text">Supabase Cloud</span>
+      </button>
+      <div class="backend-pill" id="backend-status-pill">
+        <span class="status-dot pulse" id="backend-dot"></span>
+        <span id="backend-status-text">Backend API Connected</span>
+      </div>
+      <div class="security-pill">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        <span>SOC 2 • Zero Retention</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-content">
+    
+    <!-- Hero / Executive Overview -->
+    <section id="overview-section" class="content-section active">
+      <div class="hero-banner">
+        <div class="hero-text">
+          <div class="badge-tag">Powered by Google Antigravity & Gemini Enterprise Controls</div>
+          <h1>Enterprise AI Control Tower</h1>
+          <p>Full-stack operations hub orchestrating autonomous multi-agent pipelines, real-time zero-trust DLP guardrails, and persistent enterprise RAG grounding.</p>
+        </div>
+        <div class="hero-controls">
+          <button id="quick-diagnostics-btn" class="btn btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            Run Suite Diagnostics
+          </button>
+          <button id="export-audit-btn" class="btn btn-secondary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+            </svg>
+            Download Audit Artifact
+          </button>
+        </div>
+      </div>
+
+      <!-- Real-time Stats Grid (Hydrated from backend /api/stats) -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-label">Active Agents</span>
+            <div class="stat-icon-wrapper purple">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                <line x1="8" y1="21" x2="16" y2="21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+              </svg>
+            </div>
+          </div>
+          <div class="stat-value" id="stat-active-agents">-- <span class="stat-sub">/ 16 pool</span></div>
+          <div class="stat-footer positive">
+            <span id="stat-uptime">↑ 99.98% uptime</span> • Parallel execution
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-label">Guardrail Interceptions</span>
+            <div class="stat-icon-wrapper green">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+            </div>
+          </div>
+          <div class="stat-value" id="stat-guardrail-interceptions">-- <span class="stat-sub">incidents</span></div>
+          <div class="stat-footer neutral">
+            <span id="stat-sanitized-tokens">--</span> tokens sanitized
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-label">Knowledge Grounding (RAG)</span>
+            <div class="stat-icon-wrapper blue">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+              </svg>
+            </div>
+          </div>
+          <div class="stat-value" id="stat-rag-grounding">--%</div>
+          <div class="stat-footer positive">
+            <span>Snowflake & ServiceNow sync</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-label">Avg Backend Latency</span>
+            <div class="stat-icon-wrapper orange">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+            </div>
+          </div>
+          <div class="stat-value" id="stat-latency">--ms</div>
+          <div class="stat-footer positive">
+            <span>Semantic Cache: <strong id="stat-cache-hit">--%</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Operations Matrix -->
+      <div class="grid-two-col">
+        <!-- Live System Activity -->
+        <div class="panel-card">
+          <div class="panel-header">
+            <h3>Recent Agent Task Trajectories</h3>
+            <span class="badge-status online">Live Database Sync</span>
+          </div>
+          <div class="task-list" id="task-trajectories-list">
+            <div class="loading-spinner">Loading tasks from backend API...</div>
+          </div>
+        </div>
+
+        <!-- Compliance & Security Posture -->
+        <div class="panel-card">
+          <div class="panel-header">
+            <h3>Enterprise Guardrails Posture</h3>
+            <span class="badge-status secure">Zero-Trust Active</span>
+          </div>
+          <div class="compliance-bars">
+            <div class="bar-item">
+              <div class="bar-meta">
+                <span>PII & Financial Data Masking (PCI/SSN)</span>
+                <span class="bar-pct">100%</span>
+              </div>
+              <div class="bar-track"><div class="bar-fill green-fill" style="width: 100%;"></div></div>
+            </div>
+            <div class="bar-item">
+              <div class="bar-meta">
+                <span>Role-Based Access Control (RBAC)</span>
+                <span class="bar-pct">100%</span>
+              </div>
+              <div class="bar-track"><div class="bar-fill green-fill" style="width: 100%;"></div></div>
+            </div>
+            <div class="bar-item">
+              <div class="bar-meta">
+                <span>Prompt Injection Heuristic Filters</span>
+                <span class="bar-pct">99.8%</span>
+              </div>
+              <div class="bar-track"><div class="bar-fill purple-fill" style="width: 99.8%;"></div></div>
+            </div>
+            <div class="bar-item">
+              <div class="bar-meta">
+                <span>Gemini Enterprise Spend Ceiling</span>
+                <span class="bar-pct">34% utilized</span>
+              </div>
+              <div class="bar-track"><div class="bar-fill blue-fill" style="width: 34%;"></div></div>
+            </div>
+          </div>
+          <div class="compliance-footer-note">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            Protected under EU GDPR Article 28 DPA and ISO 27001 ISMS policies.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Agent Orchestration Surface -->
+    <section id="orchestrator-section" class="content-section">
+      <div class="section-title-wrap">
+        <h2>Antigravity Agent Orchestrator</h2>
+        <p>Coordinate, configure, and dispatch autonomous multi-agent pipelines backed by the Node.js REST API.</p>
+      </div>
+
+      <div class="orchestrator-layout">
+        <!-- Agent Fleet Grid -->
+        <div class="fleet-column">
+          <div class="fleet-header">
+            <h4>Active Fleet (<span id="agent-count-badge">0</span>)</h4>
+            <button class="btn btn-sm btn-primary" id="spawn-agent-modal-btn">+ Deploy New Agent</button>
+          </div>
+
+          <div class="agent-cards-container" id="agent-cards-list">
+            <div class="loading-spinner">Loading agent fleet from server...</div>
+          </div>
+        </div>
+
+        <!-- Terminal & Execution Monitor -->
+        <div class="console-column">
+          <div class="terminal-card">
+            <div class="terminal-bar">
+              <div class="terminal-dots">
+                <span class="dot red"></span>
+                <span class="dot yellow"></span>
+                <span class="dot green"></span>
+              </div>
+              <div class="terminal-title" id="terminal-active-agent">antigravity://backend-api/agent-pipeline</div>
+              <div class="terminal-actions">
+                <button class="icon-btn-sm" id="clear-term-btn" title="Clear Console">Clear</button>
+              </div>
+            </div>
+            <div class="terminal-body" id="terminal-output">
+              <div class="term-line info">[00:00:00] Connected to Aegis Enterprise Backend API (Port 3000).</div>
+              <div class="term-line success">[00:00:01] Enterprise Model Gateway online: Gemini 1.5 Pro / Flash.</div>
+              <div class="term-line info">[00:00:02] Zero-Retention DLP Hook activated. Model training opt-out confirmed.</div>
+              <div class="term-line highlight">[00:00:03] Select an agent or dispatch a directive below.</div>
+            </div>
+            <div class="terminal-input-bar">
+              <span class="prompt-symbol">&gt;</span>
+              <input type="text" id="terminal-cmd-input" placeholder="Dispatch directive to selected agent (e.g., 'audit cloud spend in snowflake', 'verify saml sso')">
+              <button id="terminal-send-btn" class="btn btn-primary btn-sm">Dispatch</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Guardrails & DLP Section -->
+    <section id="guardrails-section" class="content-section">
+      <div class="section-title-wrap">
+        <h2>Enterprise Security & DLP Guardrails</h2>
+        <p>Real-time sensitive data interception, token masking, prompt injection neutralization, and compliance auditing.</p>
+      </div>
+
+      <!-- Live DLP Interactive Tester -->
+      <div class="panel-card test-dlp-card">
+        <div class="panel-header">
+          <h4>Interactive DLP Scanner & Policy Sandbox</h4>
+          <span class="badge-status online">Live Server Engine</span>
+        </div>
+        <p class="test-desc">Type or paste content below containing sample credit cards, SSNs, AWS keys, or prompt injections to test real-time backend sanitization.</p>
+        <div class="dlp-test-form">
+          <textarea id="dlp-test-input" class="form-control" rows="2" placeholder="Example: Testing customer card 4532-8901-2384-9912, SSN 042-12-8941, and secret key AKIAIOSFODNN7EXAMPLE..."></textarea>
+          <div class="dlp-test-actions">
+            <button id="dlp-sample-btn" class="btn btn-sm btn-secondary">Fill Sample Sensitive Text</button>
+            <button id="dlp-scan-btn" class="btn btn-sm btn-primary">Scan with Backend DLP Engine</button>
+          </div>
+        </div>
+        <div id="dlp-scan-result" class="dlp-scan-result" style="display: none;">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <div class="guardrails-grid" style="margin-top: 1.5rem;">
+        <div class="panel-card">
+          <div class="panel-header">
+            <h4>Live DLP Interception Log</h4>
+            <span class="badge-status secure">Persistent Audit Store</span>
+          </div>
+          <div class="table-container">
+            <table class="enterprise-table" id="dlp-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Source Agent</th>
+                  <th>Detection Type</th>
+                  <th>Action Taken</th>
+                  <th>Confidence</th>
+                </tr>
+              </thead>
+              <tbody id="dlp-table-body">
+                <!-- Dynamically populated from /api/dlp/events -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="panel-header">
+            <h4>Active Policy Rulebook</h4>
+          </div>
+          <div class="policy-list">
+            <div class="policy-item">
+              <div class="policy-info">
+                <strong>POL-SEC-01: Zero Raw PII Emission</strong>
+                <p>Social security numbers, IBANs, and credit card numbers are masked at tokenization layer with surrogate hashes.</p>
+              </div>
+              <span class="badge-pill active">Enforced</span>
+            </div>
+            <div class="policy-item">
+              <div class="policy-info">
+                <strong>POL-SEC-02: Approved Enterprise Connectors Only</strong>
+                <p>Prohibits outbound fetch requests outside certified VPC endpoints and whitelisted MCP server nodes.</p>
+              </div>
+              <span class="badge-pill active">Enforced</span>
+            </div>
+            <div class="policy-item">
+              <div class="policy-info">
+                <strong>POL-SEC-03: Hallucination & Factuality Threshold</strong>
+                <p>Outputs with grounding citation score below 0.88 are rejected and routed to human-in-the-loop review.</p>
+              </div>
+              <span class="badge-pill active">Enforced</span>
+            </div>
+            <div class="policy-item">
+              <div class="policy-info">
+                <strong>POL-SEC-04: Enterprise Spend Circuit Breaker</strong>
+                <p>Automatic throttles engaged if single workspace request consumes over $25 in token quota within 60s.</p>
+              </div>
+              <span class="badge-pill active">Enforced</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Enterprise RAG Knowledge Explorer -->
+    <section id="rag-section" class="content-section">
+      <div class="section-title-wrap">
+        <div class="flex-between">
+          <div>
+            <h2>Enterprise Knowledge Grounding (RAG)</h2>
+            <p>Persistent vector corpus indexed with corporate policies, engineering specifications, and FinOps directives.</p>
+          </div>
+          <button id="add-doc-modal-btn" class="btn btn-sm btn-primary">+ Ingest New Document</button>
+        </div>
+      </div>
+
+      <div class="rag-layout">
+        <div class="rag-search-box">
+          <div class="input-with-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" id="rag-query-input" placeholder="Query enterprise knowledge repository (e.g. 'What is our cloud budget strategy?' or 'Customer onboarding security')...">
+            <button id="rag-submit-btn" class="btn btn-sm btn-primary">Query RAG</button>
+          </div>
+          <div class="rag-quick-chips">
+            <span>Sample queries:</span>
+            <button class="chip-btn" data-query="What is our cloud infrastructure cost-optimization strategy?">Cloud Optimization</button>
+            <button class="chip-btn" data-query="Summarize our onboarding security policy for enterprise clients.">Customer Onboarding SOP</button>
+            <button class="chip-btn" data-query="Check Snowflake telemetry for API latency anomalies in region us-east-1.">Snowflake API Latency</button>
+            <button class="chip-btn" data-query="Gemini Enterprise zero-retention acceptable use policy">Zero-Retention Policy</button>
+          </div>
+        </div>
+
+        <div class="rag-results-container" id="rag-results-area">
+          <div class="rag-placeholder">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+            <p>Enter a query above or click a sample chip to test real-time Enterprise RAG retrieval and citation grounding.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Connectors & MCP Integrations -->
+    <section id="connectors-section" class="content-section">
+      <div class="section-title-wrap">
+        <div class="flex-between">
+          <div>
+            <h2>Certified Enterprise Connectors & MCP Servers</h2>
+            <p>Model Context Protocol endpoints integrated with corporate Single Sign-On (SSO) and RBAC.</p>
+          </div>
+          <button id="ping-all-connectors-btn" class="btn btn-sm btn-primary">Ping All Connectors</button>
+        </div>
+      </div>
+
+      <div class="connectors-grid" id="connectors-grid-list">
+        <div class="loading-spinner">Loading connector status from backend...</div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal: Create / Deploy New Agent -->
+  <div class="modal-backdrop" id="agent-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Deploy New Enterprise Agent</h3>
+        <button class="modal-close" id="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <label for="modal-agent-name">Agent Name:</label>
+        <input type="text" id="modal-agent-name" class="form-control" placeholder="e.g. Procurement Audit Agent">
+
+        <label for="modal-agent-spec">Specialization:</label>
+        <input type="text" id="modal-agent-spec" class="form-control" placeholder="e.g. ERP & Financial Compliance">
+
+        <label for="modal-agent-model">Base Foundation Model:</label>
+        <select id="modal-agent-model" class="form-control">
+          <option value="gemini-1.5-pro">Gemini 1.5 Pro (Deep Reasoning & Governance)</option>
+          <option value="gemini-1.5-flash">Gemini 1.5 Flash (Sub-100ms Low Latency)</option>
+          <option value="gemini-ultra">Gemini Ultra Enterprise</option>
+        </select>
+
+        <label for="modal-agent-desc">Description / System Prompt Objective:</label>
+        <textarea id="modal-agent-desc" class="form-control" rows="3" placeholder="Define the agent's objective, authorized tools, and guardrails..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="modal-cancel-btn">Cancel</button>
+        <button class="btn btn-primary" id="modal-save-agent-btn">Deploy Agent to Fleet</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Ingest New RAG Document -->
+  <div class="modal-backdrop" id="doc-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Ingest Enterprise Knowledge Document</h3>
+        <button class="modal-close" id="doc-modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <label for="modal-doc-title">Document Title:</label>
+        <input type="text" id="modal-doc-title" class="form-control" placeholder="e.g. Vendor Security Assessment Policy">
+
+        <label for="modal-doc-category">Category:</label>
+        <input type="text" id="modal-doc-category" class="form-control" placeholder="e.g. Information Security">
+
+        <label for="modal-doc-tags">Keywords / Tags (comma-separated):</label>
+        <input type="text" id="modal-doc-tags" class="form-control" placeholder="vendor, security, audit, soc2, compliance">
+
+        <label for="modal-doc-content">Full Text Content:</label>
+        <textarea id="modal-doc-content" class="form-control" rows="4" placeholder="Paste the verified corporate text content here..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="doc-modal-cancel-btn">Cancel</button>
+        <button class="btn btn-primary" id="modal-save-doc-btn">Ingest & Vectorize</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Supabase Cloud Database Configuration -->
+  <div class="modal-backdrop" id="supabase-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #3ecf8e;">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
+          <h3>Supabase Cloud Integration</h3>
+        </div>
+        <button class="modal-close" id="supabase-modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+          Connect your enterprise PostgreSQL database for persistent agent fleets, RAG embeddings with <code style="color: var(--accent-cyan);">pgvector</code>, and real-time DLP audit replication.
+        </p>
+
+        <div id="supabase-live-status-card" class="supabase-live-card">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.8rem; color: var(--text-sub);">Connection State:</span>
+            <span id="supabase-mode-badge" class="badge-status online">Loading...</span>
+          </div>
+          <div id="supabase-status-detail" style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.35rem;">Checking status...</div>
+        </div>
+
+        <label for="supabase-url-input">Supabase Project URL:</label>
+        <input type="text" id="supabase-url-input" class="form-control" placeholder="https://your-project-id.supabase.co">
+
+        <label for="supabase-key-input">Supabase API Key (Anon / Service Role):</label>
+        <input type="password" id="supabase-key-input" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+
+        <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem;">
+          <button class="btn btn-sm btn-outline" id="supabase-test-btn" style="flex: 1;">Test Connection</button>
+          <button class="btn btn-sm btn-secondary" id="supabase-sync-btn" style="flex: 1;">Sync Local to Cloud</button>
+        </div>
+
+        <div style="font-size: 0.75rem; color: var(--text-sub); border-top: 1px solid var(--border-color); padding-top: 0.75rem; margin-top: 0.5rem;">
+          💡 <strong>Setup Tip:</strong> Run the included <code style="color: var(--accent-emerald);">supabase/schema.sql</code> script in your Supabase SQL Editor to automatically initialize all tables and RLS security policies.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="supabase-modal-cancel-btn">Close</button>
+        <button class="btn btn-primary" id="supabase-save-btn">Save & Connect</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer-bar">
+    <div class="footer-left">
+      <span>Aegis Enterprise AI Gateway • Build v2.4.11-enterprise</span>
+    </div>
+    <div class="footer-right">
+      <span>Security Clearance: LEVEL 3</span>
+      <span class="separator">|</span>
+      <span>Gemini Enterprise Zero-Retention Protocol Active</span>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
