@@ -4,7 +4,9 @@
   "description": "Enterprise AI Operations Portal powered by Google Antigravity & Gemini Enterprise",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "build": "node scripts/bundle.js",
+    "test": "node scripts/ci_test.js"
   },
   "keywords": [
     "enterprise-ai",
