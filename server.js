@@ -26,25 +26,36 @@ const MIME_TYPES = {
   '.ico': 'image/x-icon'
 };
 
-// Database Access Helpers
+// Database Access Helpers with In-Memory Caching & Serverless Fallback
+let inMemoryDB = null;
+
 function readDatabase() {
+  if (inMemoryDB) {
+    return inMemoryDB;
+  }
   try {
     const raw = fs.readFileSync(DB_PATH, 'utf-8');
-    return JSON.parse(raw);
+    inMemoryDB = JSON.parse(raw);
+    return inMemoryDB;
   } catch (err) {
-    console.error('Failed to read database:', err);
-    return null;
+    try {
+      inMemoryDB = require('./data/database.json');
+      return inMemoryDB;
+    } catch (fallbackErr) {
+      console.error('Failed to read database:', err);
+      return inMemoryDB || null;
+    }
   }
 }
 
 function writeDatabase(data) {
+  inMemoryDB = data;
   try {
     fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf-8');
-    return true;
   } catch (err) {
-    console.error('Failed to write database:', err);
-    return false;
+    // Read-only filesystem in serverless environments (Vercel/AWS Lambda) is expected
   }
+  return true;
 }
 
 // Helper: Parse JSON Body from Incoming Request
@@ -168,8 +179,8 @@ function searchKnowledgeBase(query, documents) {
   return scoredDocs;
 }
 
-// Main HTTP Server Handler
-const server = http.createServer(async (req, res) => {
+// Main Request Handler (compatible with standalone Node.js and Serverless Functions)
+async function handleRequest(req, res) {
   const parsedUrl = url.parse(req.url, true);
   const pathname = parsedUrl.pathname;
   const method = req.method;
@@ -232,9 +243,13 @@ const server = http.createServer(async (req, res) => {
 
         const success = supabaseAdapter.initSupabase(url.trim(), key.trim());
         if (success) {
-          // Write to .env for persistence
-          const envPath = path.join(__dirname, '.env');
-          fs.writeFileSync(envPath, `PORT=${PORT}\nSUPABASE_URL=${url.trim()}\nSUPABASE_ANON_KEY=${key.trim()}\n`, 'utf-8');
+          // Write to .env for persistence (gracefully skipped in serverless read-only environments)
+          try {
+            const envPath = path.join(__dirname, '.env');
+            fs.writeFileSync(envPath, `PORT=${PORT}\nSUPABASE_URL=${url.trim()}\nSUPABASE_ANON_KEY=${key.trim()}\n`, 'utf-8');
+          } catch (e) {
+            // Read-only filesystem in serverless environment
+          }
 
           return sendJSON(res, 200, {
             success: true,
@@ -824,7 +839,9 @@ const server = http.createServer(async (req, res) => {
     const stream = fs.createReadStream(filePath);
     stream.pipe(res);
   });
-});
+}
+
+const server = http.createServer(handleRequest);
 
 server.on('error', (err) => {
   console.error('Server network error:', err);
@@ -838,11 +855,18 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('[UNHANDLED_REJECTION]', reason);
 });
 
-server.listen(PORT, () => {
-  console.log(`=======================================================`);
-  console.log(` Aegis Enterprise AI Portal & Backend API Server`);
-  console.log(` Local Endpoint : http://localhost:${PORT}/`);
-  console.log(` Health Check   : http://localhost:${PORT}/api/health`);
-  console.log(` Data Store     : ${DB_PATH}`);
-  console.log(`=======================================================`);
-});
+if (require.main === module) {
+  server.listen(PORT, () => {
+    console.log(`=======================================================`);
+    console.log(` Aegis Enterprise AI Portal & Backend API Server`);
+    console.log(` Local Endpoint : http://localhost:${PORT}/`);
+    console.log(` Health Check   : http://localhost:${PORT}/api/health`);
+    console.log(` Data Store     : ${DB_PATH}`);
+    console.log(`=======================================================`);
+  });
+}
+
+// Export for Vercel Serverless Functions and module consumers
+module.exports = handleRequest;
+module.exports.server = server;
+module.exports.handleRequest = handleRequest;
